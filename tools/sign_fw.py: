@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+import sys
+from Crypto.PublicKey import RSA
+from Crypto.Signature import pkcs1_15
+from Crypto.Hash import SHA256
+
+def sign_firmware(input_file, output_file):
+    try:
+        # 1. Load firmware
+        with open(input_file, 'rb') as f:
+            firmware = f.read()
+        
+        # 2. Create hash
+        h = SHA256.new(firmware)
+        
+        # 3. Load private key
+        with open('keys/rsa_priv.pem', 'rb') as f:
+            priv_key = RSA.import_key(f.read())
+        
+        # 4. Sign the hash
+        signature = pkcs1_15.new(priv_key).sign(h)
+        
+        # 5. Write signed firmware
+        with open(output_file, 'wb') as f:
+            f.write(signature)
+            f.write(firmware)
+            
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: sign_fw.py <input.bin> <output.bin>")
+        sys.exit(1)
+    sign_firmware(sys.argv[1], sys.argv[2])
